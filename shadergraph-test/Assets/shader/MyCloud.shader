@@ -3,10 +3,17 @@
     Properties
     {
         _Color("Color", Color) = (1,1,1,1)
+        _LightColor0("LightColor0", Color) = (1,1,1,1)
         _Intensity("Intensity", Range(0,1)) = 0.1
         [IntRange] _Loop("Loop", Range(0,128)) = 32
         _Radius("Radius", Range(0,2)) = 1
         _NoiseScale("NoiseScale",  Range(0,100)) = 10
+        _Absorption("Absorption",Range(0,100)) = 50
+        _Opacity("Opacity", Range(0,100)) = 100
+        _AbsorptionLight("AbsorptionLight", Range(0,100)) = 50
+        _OpacityLight("OpacityLight",Range(0,100)) = 50
+        _LightStepScale("LightStepScale",Range(0,1)) = 0.5
+        [IntRange] _LoopLight("LoopLight",Range(0,128)) = 6
     }
 
     CGINCLUDE 
@@ -25,11 +32,20 @@
     };
 
     #define MAX_LOOP 100
-    float4 _Color;
+    float4  _Color,
+            _LightColor0;
+
     float   _Intensity,
             _Radius,
-            _NoiseScale;
-    int _Loop;
+            _NoiseScale,
+            _Absorption,
+            _Opacity,
+            _AbsorptionLight,
+            _OpacityLight,
+            _LightStepScale;
+
+    int     _Loop,
+            _LoopLight;
 
     //inline 化で小さい関数の呼び出しが効率化される
     // https://www.shadertoy.com/view/lss3zr
@@ -46,10 +62,10 @@
         f = f * f * (3.0 - 2.0 * f);
         float n = p.x + p.y * 57.0 + 113.0 * p.z;
 
-        float res = (lerp(lerp(hash(n +   0.0), hash(n +   1.0), f.x),
-                            lerp(hash(n +  57.0), hash(n +  58.0), f.x), f.y),
-                        lerp(lerp(hash(n + 113.0), hash(n + 114.0), f.x),
-                            lerp(hash(n + 170.0), hash(n + 171.0), f.x), f.y), f.z);
+        float res = lerp(lerp(lerp(hash(n +   0.0), hash(n +   1.0), f.x),
+                  lerp(hash(n +  57.0), hash(n +  58.0), f.x), f.y),
+             lerp(lerp(hash(n + 113.0), hash(n + 114.0), f.x),
+                  lerp(hash(n + 170.0), hash(n + 171.0), f.x), f.y), f.z);
         return res;
     }
 
@@ -91,23 +107,58 @@
 
         //オブジェクト空間でのray長さ
         float step = 1.0 / _Loop;
+        float lightStep = 1.0 / _LoopLight;
+
+        float3 localLightDir = UnityWorldToObjectDir(_WorldSpaceLightPos0.xyz);
+        float3 localLightStep = localLightDir * lightStep * _LightStepScale;
+
+        float jitter = step * hash(
+            worldPos.x + 
+            worldPos.y * 10 + 
+            worldPos.z * 100 + 
+            _Time.x);
+
+        worldPos += jitter * worldDir;
+
         float3 localStep = localDir * step;
 
-        float alpha = 0.0;
-
-        for(int i = 0; i < _Loop; i++){
+        float4 color = float4(_Color.rgb,0.0);
+        float transmittance = 1.0;
+        
+        for(int i = 0; i < _Loop; i++)
+        {
             float density = densityFunction(localPos);
-            if(density > 0.001){
-                alpha += (1.0 - alpha) * density * _Intensity;
+            if(density > 0.001)
+            {
+                float d = density * step;
+                transmittance *= 1.0 - d * _Absorption;
+                float transmittanceLight = 1.0;
+                float3 lightPos = localPos;
+                for(int j = 0; j < _LoopLight; j++)
+                {
+                    float densityLight = densityFunction(lightPos);
+                    if(densityLight > 0.0){
+                        float dl = densityLight * lightStep;
+                        transmittanceLight *= 1.0 - dl * _AbsorptionLight;
+                        if(transmittanceLight < 0.01)
+                        {
+                            transmittanceLight = 0.0;
+                            break;
+                        }
+                    }
 
+                    lightPos += localLightStep;
+                }
+                if(transmittance < 0.01) break;
+
+                color.a += _Opacity * d * transmittance;
+                color.rgb += _LightColor0 * (_OpacityLight * d * transmittance * transmittanceLight);
             }
             localPos += localStep;
 
             if(!all(max(0.5 - abs(localPos), 0.0))) break;
         }
 
-        float4 color = _Color;
-        color.a *= alpha;
         return color;
     }
     ENDCG

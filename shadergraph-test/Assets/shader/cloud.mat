@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: cloud
-  m_Shader: {fileID: 4800000, guid: 5f9266385263c4f5986311fe2d7278d4, type: 3}
+  m_Shader: {fileID: 4800000, guid: f2b4208632b5e434890924332daa3650, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -51,6 +51,8 @@ Material:
     - Vector1_671EED25: 362
     - Vector1_83867514: 187
     - Vector1_9FA040AF: 100
+    - _Absorption: 86
+    - _AbsorptionLight: 100
     - _AlphaClip: 0
     - _Blend: 0
     - _BumpScale: 1
@@ -61,13 +63,17 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _Intensity: 0.172
-    - _Loop: 71
+    - _Intensity: 0.44
+    - _LightStepScale: 0.62
+    - _Loop: 20
+    - _LoopLight: 6
     - _Metallic: 0
-    - _NoiseScale: 4
+    - _NoiseScale: 13
     - _OcclusionStrength: 1
+    - _Opacity: 77
+    - _OpacityLight: 82
     - _QueueOffset: 0
-    - _Radius: 0.85
+    - _Radius: 0.53
     - _ReceiveShadows: 1
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
@@ -81,6 +87,7 @@ Material:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _LightColor0: {r: 1, g: 1, b: 1, a: 1}
     - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
 --- !u!114 &8895368025517697050
 MonoBehaviour:
