@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: cloud 1
-  m_Shader: {fileID: 4800000, guid: 5f9266385263c4f5986311fe2d7278d4, type: 3}
+  m_Shader: {fileID: 4800000, guid: f2b4208632b5e434890924332daa3650, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -68,17 +68,20 @@ Material:
     - _Loop: 71
     - _LoopLight: 6
     - _Metallic: 0
-    - _NoiseScale: 4
+    - _NoiseScale: 50
     - _OcclusionStrength: 1
     - _Opacity: 95
     - _OpacityLight: 71
     - _QueueOffset: 0
     - _Radius: 0.85
     - _ReceiveShadows: 1
+    - _SmokeNoiseScale: 2
+    - _SmokeNoiseSwarl: 0
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
+    - _Step: 0.03
     - _Surface: 0
     - _WorkflowMode: 1
     - _ZWrite: 1

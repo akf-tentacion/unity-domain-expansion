@@ -1,7 +1,8 @@
-﻿Shader "Unlit/MyCloud2"
+﻿Shader "Unlit/MyCloud4"
 {
     Properties
     {
+        _MainTex("dummytex",2D) = "White"{}
         _Color("Color", Color) = (1,1,1,1)
         _LightColor0("LightColor0", Color) = (1,1,1,1)
         [IntRange] _Loop("Loop", Range(0,128)) = 32
@@ -12,6 +13,9 @@
         _OpacityLight("OpacityLight",Range(0,100)) = 50
         _LightStepScale("LightStepScale",Range(0,1)) = 0.5
         [IntRange] _LoopLight("LoopLight",Range(0,128)) = 6
+
+        _SmokeNoiseScale("smokeNoiseScale",Range(0,10)) = 2.0
+        _SmokeNoiseSwarl("SmokeNoiseVal",Range(0,10)) = 0.5
     }
 
     CGINCLUDE 
@@ -22,15 +26,19 @@
     struct appdata
     {
         float4 vertex : POSITION;
+        float2 uv   :   TEXCOORD0;
     };
 
     struct v2f
     {
+        float2 uv   :   TEXCOORD0;
         float4 vertex : SV_POSITION;
         float3 worldPos : TEXCOORD1;
     };
 
     #define MAX_LOOP 100
+    sampler2D _MainTex;
+    float4 _MainTex_ST;
     float4  _Color,
             _LightColor0;
 
@@ -39,7 +47,9 @@
             _Opacity,
             _AbsorptionLight,
             _OpacityLight,
-            _LightStepScale;
+            _LightStepScale,
+            _SmokeNoiseScale,
+            _SmokeNoiseSwarl;
 
     int     _Loop,
             _LoopLight;
@@ -105,17 +115,7 @@
         return min(max(d.x,d.y),0.0) + length(max(d,0.0));
     }
 
-    //密度関数
-    inline float densityFunction1(float3 p){
-
-        float f1 = fbm(p * _NoiseScale) - length(p / _Radius);
-        //return length()
-
-
-        //return fbm(p * _NoiseScale) - length(p / _Radius);
-    }
-
-    inline float densityFunction2(float3 p){
+    inline float densityFunction3(float3 p){
 
         float f = fbm(p * _NoiseScale);
         float d2 = -torus(p, float2(0.5, 0.02)) + f * 0.2;
@@ -123,15 +123,38 @@
 
         //return fbm(p * _NoiseScale) - length(p / _Radius);
     }
+
     inline float densityFunction(float3 p){
-        float f = fbm(p * _NoiseScale);
+
+        float noise = getNoise(p.xyz * _SmokeNoiseScale - _Time.w * 0.01,_SmokeNoiseSwarl );
+        noise = noise * noise * noise * noise;  //more contrast
+
+        //float f = fbm(noise * _NoiseScale);
+        //float sp = sdCappedCylinder(p,0.15,0.25);
+        //if(sp <= 0.01){
+         //   return 1;
+       // }
+
+        float d1 = -torus(p, float2(0.5, 0.05)) + noise * 0.7;
+        float d2 = -box(p, float3(0.35,0.08,0.005)) + noise * 0.01 * _NoiseScale;
+        return d2;
+
+        //return fbm(p * _NoiseScale) - length(p / _Radius);
+    }
+    
+    inline float densityFunction2(float3 p){
+
+        float noise = getNoise(p.xyz * _SmokeNoiseScale+ _Time.w * 0.01,_SmokeNoiseSwarl );
+        noise = noise * noise * noise * noise;  //more contrast
+
+        float f = fbm(noise * _NoiseScale);
         float sp = sdCappedCylinder(p,0.15,0.25);
-        if(sp <= 0.01){
-            return 1;
-        }
+        //if(sp <= 0.01){
+         //   return 1;
+       // }
 
         float d1 = -torus(p, float2(0.5, 0.05)) + f * 0.2;
-        float d2 = -box(p, float3(0.35,0.08,0.005)) + f * 0.3;
+        float d2 = -box(p, float3(0.35,0.08,0.005)) + f * 0.2;
         return d2;
 
         //return fbm(p * _NoiseScale) - length(p / _Radius);
@@ -142,6 +165,7 @@
     {
         v2f o;
         o.vertex = UnityObjectToClipPos(v.vertex);
+        o.uv = TRANSFORM_TEX(v.uv, _MainTex);
         //ポリゴン表面座標をfragmentシェーダーで利用可能にする
         o.worldPos = mul(unity_ObjectToWorld, v.vertex);
         return o;
@@ -149,21 +173,16 @@
     
     float4 frag(v2f i) : SV_TARGET
     {
-
+        
         //ワールド空間でのポリゴン表面座標及びカメラ方向を、
         //オブジェクト空間に変換する部分
         float3 worldPos = i.worldPos;
         float3 worldDir = normalize(worldPos - _WorldSpaceCameraPos);
 
-        float3 localPos = mul(unity_WorldToObject, float4(worldPos,1.0));
-        float3 localDir = UnityWorldToObjectDir(worldDir);
-
         //オブジェクト空間でのray長さ
         float step = 1.0 / _Loop;
         float lightStep = 1.0 / _LoopLight;
 
-        float3 localLightDir = UnityWorldToObjectDir(_WorldSpaceLightPos0.xyz);
-        float3 localLightStep = localLightDir * lightStep * _LightStepScale;
 
         float jitter = step * hash(
             worldPos.x + 
@@ -173,6 +192,18 @@
 
         worldPos += jitter * worldDir;
 
+        float3 localPos = mul(unity_WorldToObject, float4(worldPos,1.0));
+        float3 localDir = UnityWorldToObjectDir(worldDir);
+        float3 localLightDir = UnityWorldToObjectDir(_WorldSpaceLightPos0.xyz);
+        float3 localLightStep = localLightDir * lightStep * _LightStepScale;
+
+        /*
+        float noise = getNoise(float3(i.uv, _Time.w * 0.1));
+        noise = noise * noise * noise * noise * 3.0;  //more contrast
+        float3 distortion = float3(noise,noise,noise) - 0.5019607;
+        localPos += distortion * 0.5;
+        */
+
         float3 localStep = localDir * step;
 
         float4 color = float4(_Color.rgb,0.0);
@@ -180,7 +211,7 @@
         
         for (int i = 0; i < _Loop; ++i)
         {
-            
+
             float density = densityFunction(localPos);
 
             if (density > 0.0)

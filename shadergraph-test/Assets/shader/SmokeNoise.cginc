@@ -1,9 +1,5 @@
 ﻿//https://www.shadertoy.com/view/MsdGWn
 
-const int noiseSwirlSteps = 2;
-const float noiseSwirlValue = 1.;
-
-
 float simplex(float3 v);
 float getNoise(float3 v);
 
@@ -27,11 +23,10 @@ float fbm5(float3 v) {
     return result;
 }
 
-float getNoise(float3 v) {
-	float noiseSwirlStepValue = noiseSwirlValue / float(noiseSwirlSteps);
+float getNoise(float3 v,float noiseSwirlStepValue) {
     //  make it curl
 
-    for (int i=0; i<noiseSwirlSteps; i++) {
+    for (int i=0; i<2; i++) {
     	v.xy += float2(fbm3(v), fbm3(float3(v.xy, v.z + 1000.))) * noiseSwirlStepValue;
     }
     //  normalize
