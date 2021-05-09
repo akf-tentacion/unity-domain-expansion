@@ -52,7 +52,7 @@ Material:
     - Vector1_83867514: 187
     - Vector1_9FA040AF: 100
     - _Absorption: 86
-    - _AbsorptionLight: 100
+    - _AbsorptionLight: 87
     - _AlphaClip: 0
     - _Blend: 0
     - _BumpScale: 1
@@ -70,8 +70,8 @@ Material:
     - _Metallic: 0
     - _NoiseScale: 13
     - _OcclusionStrength: 1
-    - _Opacity: 77
-    - _OpacityLight: 82
+    - _Opacity: 88
+    - _OpacityLight: 61
     - _QueueOffset: 0
     - _Radius: 0.53
     - _ReceiveShadows: 1

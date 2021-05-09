@@ -4,9 +4,7 @@
     {
         _Color("Color", Color) = (1,1,1,1)
         _LightColor0("LightColor0", Color) = (1,1,1,1)
-        _Intensity("Intensity", Range(0,1)) = 0.1
         [IntRange] _Loop("Loop", Range(0,128)) = 32
-        _Radius("Radius", Range(0,2)) = 1
         _NoiseScale("NoiseScale",  Range(0,100)) = 10
         _Absorption("Absorption",Range(0,100)) = 50
         _Opacity("Opacity", Range(0,100)) = 100
@@ -19,6 +17,7 @@
     CGINCLUDE 
 
     #include "UnityCG.cginc"
+    #include "SmokeNoise.cginc"
 
     struct appdata
     {
@@ -35,9 +34,7 @@
     float4  _Color,
             _LightColor0;
 
-    float   _Intensity,
-            _Radius,
-            _NoiseScale,
+    float   _NoiseScale,
             _Absorption,
             _Opacity,
             _AbsorptionLight,
@@ -110,6 +107,7 @@
 
     //密度関数
     inline float densityFunction1(float3 p){
+
         float f1 = fbm(p * _NoiseScale) - length(p / _Radius);
         //return length()
 
@@ -126,7 +124,6 @@
         //return fbm(p * _NoiseScale) - length(p / _Radius);
     }
     inline float densityFunction(float3 p){
-
         float f = fbm(p * _NoiseScale);
         float sp = sdCappedCylinder(p,0.15,0.25);
         if(sp <= 0.01){
@@ -183,6 +180,7 @@
         
         for (int i = 0; i < _Loop; ++i)
         {
+            
             float density = densityFunction(localPos);
 
             if (density > 0.0)
